@@ -51,8 +51,10 @@ def dblog(logstr):
     print(logstr)
     
 def myIsNan(x):
+    if x is None:
+        return True
     if type(x)==str:
-        return False
+        return x.upper() =='NAN'
     return isnan(x)    
     
 def readCSVfiles(flist):
@@ -250,7 +252,11 @@ class SRschedule: # the SR (spaced repetition) schedule object picks stimulus it
             if len(self.ReviewItemsToWorkOn) > 0:
                 nextItem=self.ReviewItemsToWorkOn.pop(0)
             else:
-                nextItem=self.NewItemsToWorkOn.pop(0)
+                if len(self.NewItemsToWorkOn) > 0 : 
+                    nextItem=self.NewItemsToWorkOn.pop(0)
+                else:
+                    dblog(f'\n*** No more items to work on! Quitting.\n')
+                    return False
             # make sure properties are initiatlised
             if not nextItem in self.properties.keys():
                 self.properties[nextItem]= {'status': self.status(nextItem),
@@ -261,6 +267,7 @@ class SRschedule: # the SR (spaced repetition) schedule object picks stimulus it
         dblog(f'\n*** next working on items "{self.tripletToWorkOn}".\n')
         
         self.currentItem=self.tripletToWorkOn[-1]
+        return True
             
     
     def processLastTrial(self,lastTrial):
@@ -318,7 +325,7 @@ class SRschedule: # the SR (spaced repetition) schedule object picks stimulus it
         if self.currentItem in self.NewItemsToWorkOn:
             self.NewItemsToWorkOn.remove(self.currentItem)
         self.tripletToWorkOn.remove(self.currentItem)
-        self.chooseCurrentItems()
+        return self.chooseCurrentItems()
   
     def paramNames(self):
         return self.stimVarParams
@@ -334,12 +341,18 @@ class SRschedule: # the SR (spaced repetition) schedule object picks stimulus it
         Here, this function only neds to compose the parameters for the currentItem, choosing appropriate foils depending on status
         and deciding the positioning (order) of item and foils
         """
-        self.selectTargets()
+        if not self.selectTargets():
+            return []
         shuffle(order)
         self.params=self.targets+order
         return self.params
     
     def selectTargets(self):
+        if len(self.tripletToWorkOn)==0:
+            # Nothing more to work on: propagate empty target and parameter lists to terminate
+            self.targets=[]
+            self.params=[]
+            return False
         self.currentItem=self.tripletToWorkOn[-1]
         x2=None
         x3=None
@@ -353,6 +366,7 @@ class SRschedule: # the SR (spaced repetition) schedule object picks stimulus it
             while (x3==self.currentItem) or (x3==x2):
                 x3=randomChoice(sl.availableStimTypes)
         self.targets=[self.currentItem, x2, x3]
+        return True
 
     def finished(self):
         return False

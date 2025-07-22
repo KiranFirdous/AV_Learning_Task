@@ -1,0 +1,23 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Mon Jul 21 10:55:08 2025
+
+@author: jan
+"""
+
+import scipy.io.wavfile as wav
+import ClickTrainLibrary as cl
+import PicsWithSounds as ps
+cl.soundPlayer=cl.pygameSoundHardware() # this will initialize pygame
+import time
+import pygame
+from random import choice as randomChoice
+from random import shuffle
+from copy import deepcopy
+import psyPhysConfig as config
+from math import isnan
+from glob import glob
+from os import path
+import numpy as np
+

@@ -3,6 +3,8 @@
 """
 Created on Tue Feb 18 15:17:26 2025
 
+This is a stimulus module for presenting audio-visual stimuli for the vocab learning task
+
 @author: jan
 """
 import scipy.io.wavfile as wav
@@ -41,37 +43,58 @@ positions = [
 #     (WIDTH // 2, HEIGHT // 2),  # Center position
 #     (3 * WIDTH // 4, HEIGHT // 2)  # Right position
 # ]
-# availableStimTypes=[ path.basename(x) for x in glob('stimuli/pictures/*.jpeg')]        
-# if len(availableStimTypes)<5:
-#     raise Exception('Not enough image files for AV stimuli found in stimuli/pictures/')
-# availableStimTypes=[ x[:-5] for x in availableStimTypes]
-# availableStimTypes.remove('Fail')
-# availableStimTypes.remove('Success')
-availableStimTypes=['Apple',
- 'Apricot',
- 'Banana',
- 'Cherry',
- 'Fig',
- 'Grape',
- 'Grapefruit',
- 'Kiwi',
- 'Lemon',
- 'Mango',
- 'Peach',
- 'Pineapple',
- 'Plum',
- 'Raspberry',
- 'Strawberry',
- 'Tomato',
- 'Watermelon']
+pictureDir='stimuli/pictures/'
+soundDir='stimuli/sounds/'
+
+availableStimTypes=[ path.basename(x) for x in glob(pictureDir+'*.jpeg')]        
+if len(availableStimTypes)<5:
+    raise Exception(f'Not enough image files for AV stimuli found in {pictureDir}')
+availableStimTypes=[ x[:-5] for x in availableStimTypes]
+
+availableSoundFiles=[ path.basename(x) for x in glob(soundDir+'*.wav')]        
+availableSoundFiles=[ x[:-4] for x in availableSoundFiles]
+missingImageIdx=np.where([ not(x in availableStimTypes) for x in availableSoundFiles])[0]
+missingSoundIdx=np.where([ not(x in availableSoundFiles) for x in availableStimTypes])[0]
+for missing in missingImageIdx:
+    print(f'WARNING: Missing image file #{missing} {availableSoundFiles[missing]}.jpeg')
+print()
+
+missingSounds=[availableStimTypes[missing] for missing in missingSoundIdx]
+for missing in missingSounds:
+    print(f'WARNING: Missing sound file {missing}.wav')
+    availableStimTypes.remove(missing)
+print()
+
+availableStimTypes.remove('Fail')
+availableStimTypes.remove('Success')
+# availableStimTypes=['Apple',
+#  'Apricot',
+#  'Banana',
+#  'Cherry',
+#  'Fig',
+#  'Grape',
+#  'Grapefruit',
+#  'Kiwi',
+#  'Lemon',
+#  'Mango',
+#  'Peach',
+#  'Pineapple',
+#  'Plum',
+#  'Raspberry',
+#  'Strawberry',
+#  'Tomato',
+#  'Watermelon']
 
 # self.availableStimTypes=availableStimTypes
 
 cachedStimuli={}
 
 def cacheStimulus(ID):
+    if ID in cachedStimuli.keys():
+        # stimulus with ID already in cache
+        return
     newStim={}
-    sound_file = 'stimuli/sounds/'+ ID + '.wav'
+    sound_file = soundDir+ ID + '.wav'
     # print("Caching WAV file:", sound_file)
     fs,signal=wav.read(sound_file)
     signal=signal/(2**15) # scale it to float in +/-1 range
@@ -79,7 +102,8 @@ def cacheStimulus(ID):
         # mono signal. Make stereo
         signal=np.vstack((signal,signal)).T
     newStim["sounds"]=signal
-    jpeg_file = 'stimuli/pictures/'+ ID + '.jpeg'
+    newStim["fs"]=fs
+    jpeg_file = pictureDir+ ID + '.jpeg'
     # print("Caching JPEG file:", jpeg_file)
     img = pygame.image.load(jpeg_file)
     newStim["image"]= pygame.transform.scale(img, (imageSize, imageSize))
@@ -92,7 +116,9 @@ def cachedImage(ID):
 
 def cachedSounds(ID):
     return cachedStimuli[ID]['sounds']
-    
+
+def cachedSampleRate(ID):
+    return cachedStimuli[ID]['fs']    
 
 # Default stimulus parameters
 
@@ -166,15 +192,6 @@ class pictureAndSoundStimulus(cl.stimObject):
         self.stimParams['Foil2_Pos']=selectedOrder[2]
         self.ready()
         return self.stimParams
-            
-    # def readAvailableStimTypes(self):            
-    #     availableStimTypes=[ path.basename(x) for x in glob('stimuli/pictures/*.jpeg')]        
-    #     if len(availableStimTypes)<5:
-    #         raise Exception('Not enough image files for AV stimuli found in stimuli/pictures/')
-    #     availableStimTypes=[ x[:-5] for x in availableStimTypes]
-    #     availableStimTypes.remove('Fail')
-    #     availableStimTypes.remove('Success')
-    #     self.availableStimTypes=availableStimTypes
 
     def ready(self):
         if 'ID' not in self.stimParams or not self.stimParams['ID']:
@@ -182,6 +199,9 @@ class pictureAndSoundStimulus(cl.stimObject):
         # load target from cache        
         self.image=cachedImage(self.stimParams['ID'])
         self.sounds=cachedSounds(self.stimParams['ID'])
+        self.sampleRate=cachedSampleRate(self.stimParams['ID'])
+        if self.sampleRate < 40000:
+            raise  Exception(f"\nWARNING: {self.stimParams['ID']} has low sample rate {self.sampleRate} Hz.")
         # load foils from cache
         if self.stimParams['Foil1_ID']:
             if not myIsNan(self.stimParams['Foil1_ID']):
@@ -403,17 +423,17 @@ class detectors:
 
 
 #%%
-if __name__ == "__main__":
+# if __name__ == "__main__":
     
-    stim=pictureAndSoundStimulus('banana')
-    stim.ready()
-    stim.play()
-    # time.sleep(1)
-    # stim.play()
-    stim.show()
-    time.sleep(1)
-    stim.play()
-    time.sleep(1)
-    stim.hide()
+#     stim=pictureAndSoundStimulus('banana')
+#     stim.ready()
+#     stim.play()
+#     # time.sleep(1)
+#     # stim.play()
+#     stim.show()
+#     time.sleep(1)
+#     stim.play()
+#     time.sleep(1)
+#     stim.hide()
     
       

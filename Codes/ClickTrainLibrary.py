@@ -1213,8 +1213,8 @@ class ModulatedClickTrain(stimObject):
         self.stim2.reference=self.reference
         self.stim1.levelRePeak=self.levelRePeak
         self.stim2.levelRePeak=self.levelRePeak
-        # self.stim1.clickShape=self.clickShape
-        # self.stim2.clickShape=self.clickShape
+        self.stim1.clickShape=self.clickShape
+        self.stim2.clickShape=self.clickShape
         self.stim1.ears=self.ears
         self.stim2.ears=self.ears
         # set params for subsidiary stimuli
@@ -1285,9 +1285,10 @@ class silence(stimObject):
     
 #%% define a wav file stimulus object            
 class wavFileObject(stimObject):
-    def __init__(self, wavFileName=None):
+    def __init__(self,wavFileName=None):
         super().__init__()
         self.readWavFile(wavFileName)
+      
     
     def readWavFile(self,wavFileName):    
         import scipy.io.wavfile as wav
